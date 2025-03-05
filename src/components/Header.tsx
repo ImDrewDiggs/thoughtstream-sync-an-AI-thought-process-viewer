@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { cn } from "@/lib/utils";
 
 interface HeaderProps {
@@ -14,23 +15,27 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
       className
     )}>
       <div className="flex items-center space-x-2">
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center">
-          <div className="w-3 h-3 bg-white rounded-full animate-pulse" />
-        </div>
-        <h1 className="text-2xl font-medium bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
-          ThoughtStream Sync
-        </h1>
+        <Link to="/" className="flex items-center space-x-2">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center">
+            <div className="w-3 h-3 bg-white rounded-full animate-pulse" />
+          </div>
+          <h1 className="text-2xl font-medium bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
+            ThoughtStream Sync
+          </h1>
+        </Link>
       </div>
       
       <div className="flex items-center space-x-4">
-        <a 
-          href="#" 
+        <Link 
+          to="/documentation" 
           className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
         >
           Documentation
-        </a>
+        </Link>
         <a 
-          href="#" 
+          href="https://github.com/your-github/thoughtstream-sync" 
+          target="_blank"
+          rel="noreferrer"
           className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
         >
           Examples
