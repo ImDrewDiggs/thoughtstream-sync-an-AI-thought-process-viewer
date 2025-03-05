@@ -11,6 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import { getApiKey, streamThoughtsFromOpenAI } from '@/services/aiService';
+import { AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Index = () => {
   // State for model selection
@@ -27,6 +29,7 @@ const Index = () => {
   // State for API connection
   const [hasApiKey, setHasApiKey] = useState(false);
   const [showApiDialog, setShowApiDialog] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
   
   const animationRef = useRef<number | null>(null);
   
@@ -82,6 +85,7 @@ const Index = () => {
     
     setIsProcessing(true);
     setThoughts([]);
+    setApiError(null);
     
     // Reset the timeline
     stopAnimation();
@@ -107,9 +111,10 @@ const Index = () => {
       },
       onError: (error) => {
         setIsProcessing(false);
+        setApiError(error);
         toast({
           title: "Error",
-          description: error,
+          description: "Failed to generate thought process",
           variant: "destructive"
         });
       }
@@ -226,6 +231,30 @@ const Index = () => {
                 </Button>
               </div>
             </div>
+            
+            {/* API Error Alert */}
+            {apiError && (
+              <Alert variant="destructive" className="animate-appear">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription className="space-y-2">
+                  <p>{apiError}</p>
+                  {apiError.includes("quota") && (
+                    <>
+                      <p className="font-semibold mt-2">How to fix:</p>
+                      <ol className="list-decimal pl-5 space-y-1">
+                        <li>Visit <a href="https://platform.openai.com/account/billing/overview" target="_blank" rel="noreferrer" className="underline">OpenAI Billing</a> to check your usage</li>
+                        <li>Upgrade to a paid plan or add more credits</li>
+                        <li>Try using a different API key</li>
+                      </ol>
+                      <Button variant="outline" size="sm" onClick={() => setShowApiDialog(true)} className="mt-2">
+                        Update API Key
+                      </Button>
+                    </>
+                  )}
+                </AlertDescription>
+              </Alert>
+            )}
             
             {/* Visualization section */}
             {thoughts.length > 0 && (

@@ -221,8 +221,31 @@ export const streamThoughtsFromOpenAI = async (
     });
     
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      const errorMessage = errorData.error?.message || `API error: ${response.status}`;
+      // Get the error details
+      const errorBody = await response.text();
+      let errorMessage = `API error: ${response.status}`;
+      
+      try {
+        const errorData = JSON.parse(errorBody);
+        
+        // Handle quota exceeded error
+        if (errorData.error?.code === "insufficient_quota" || errorBody.includes("exceeded your current quota")) {
+          errorMessage = "OpenAI API quota exceeded. Please check your billing details or upgrade your OpenAI plan.";
+          
+          // Show toast with more details
+          toast({
+            title: "API Quota Exceeded",
+            description: "Your OpenAI account has reached its quota limit. Visit platform.openai.com to upgrade your plan.",
+            variant: "destructive",
+          });
+        } else if (errorData.error?.message) {
+          errorMessage = errorData.error.message;
+        }
+      } catch (e) {
+        // If we can't parse the JSON, just use the status code
+        console.error("Error parsing API error response:", e);
+      }
+      
       handlers.onError(errorMessage);
       return;
     }
@@ -232,6 +255,6 @@ export const streamThoughtsFromOpenAI = async (
     
   } catch (error) {
     console.error("Error connecting to OpenAI:", error);
-    handlers.onError("Failed to connect to OpenAI API");
+    handlers.onError("Failed to connect to OpenAI API. Please check your connection and try again.");
   }
 };

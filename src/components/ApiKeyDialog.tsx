@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/use-toast";
 import { getApiKey, storeApiKey } from "@/services/aiService";
+import { InfoIcon } from "lucide-react";
 
 interface ApiKeyDialogProps {
   open: boolean;
@@ -81,6 +82,29 @@ const ApiKeyDialog: React.FC<ApiKeyDialogProps> = ({ open, onOpenChange }) => {
                 platform.openai.com/api-keys
               </a>
             </p>
+          </div>
+          
+          <div className="rounded-md bg-blue-50 p-3 text-sm">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <InfoIcon className="h-4 w-4 text-blue-600" aria-hidden="true" />
+              </div>
+              <div className="ml-3 text-blue-800">
+                <h3 className="font-medium">About API Usage</h3>
+                <div className="mt-1 text-xs">
+                  <p>ThoughtStream Sync uses your OpenAI API key to visualize thought processes. Usage counts toward your OpenAI account quota.</p>
+                  <p className="mt-1">Free tier accounts have limited usage. Consider upgrading to a paid plan if you encounter quota errors.</p>
+                  <a 
+                    href="https://platform.openai.com/account/billing/overview" 
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="mt-1 block font-medium text-blue-600 hover:underline"
+                  >
+                    Check your usage →
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
           
           <DialogFooter className="pt-4">
