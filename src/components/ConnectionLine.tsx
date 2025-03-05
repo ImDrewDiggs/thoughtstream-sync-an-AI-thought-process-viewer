@@ -43,8 +43,21 @@ const ConnectionLine: React.FC<ConnectionLineProps> = ({
         strokeLinecap="round"
         strokeDasharray={isAnimated ? "10" : "0"}
       />
+      
+      {/* Arrow marker at the end of the line */}
+      <marker
+        id="arrowhead"
+        markerWidth="10"
+        markerHeight="7"
+        refX="9"
+        refY="3.5"
+        orient="auto"
+      >
+        <polygon points="0 0, 10 3.5, 0 7" fill="hsl(210, 100%, 70%)" />
+      </marker>
+      
       {/* Animated dot along the path */}
-      {isAnimated && (
+      {isAnimated && isVisible && (
         <circle r="3" fill="#3B82F6">
           <animateMotion
             dur="3s"

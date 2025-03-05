@@ -5,10 +5,12 @@ import ModelSelector from '@/components/ModelSelector';
 import ModelUploader from '@/components/ModelUploader';
 import ThoughtVisualizer from '@/components/ThoughtVisualizer';
 import TimelineControl from '@/components/TimelineControl';
-import { ModelInfo, ThoughtNode, generateThoughtProcess } from '@/utils/modelUtils';
+import ApiKeyDialog from '@/components/ApiKeyDialog';
+import { ModelInfo, ThoughtNode } from '@/utils/modelUtils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
+import { getApiKey, streamThoughtsFromOpenAI } from '@/services/aiService';
 
 const Index = () => {
   // State for model selection
@@ -22,7 +24,25 @@ const Index = () => {
   const [prompt, setPrompt] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   
+  // State for API connection
+  const [hasApiKey, setHasApiKey] = useState(false);
+  const [showApiDialog, setShowApiDialog] = useState(false);
+  
   const animationRef = useRef<number | null>(null);
+  
+  // Check for API key on mount
+  useEffect(() => {
+    const apiKey = getApiKey();
+    setHasApiKey(!!apiKey);
+  }, []);
+  
+  // Update API key status when dialog closes
+  const handleApiDialogChange = (open: boolean) => {
+    setShowApiDialog(open);
+    if (!open) {
+      setHasApiKey(!!getApiKey());
+    }
+  };
   
   // Handle model upload
   const handleModelUploaded = (model: ModelInfo) => {
@@ -54,24 +74,46 @@ const Index = () => {
       return;
     }
     
-    setIsProcessing(true);
+    // Check if API key is available
+    if (!hasApiKey) {
+      setShowApiDialog(true);
+      return;
+    }
     
-    // Simulate a brief delay for processing
-    setTimeout(() => {
-      const generatedThoughts = generateThoughtProcess(prompt, selectedModel.id);
-      setThoughts(generatedThoughts);
-      
-      // Reset the timeline
-      stopAnimation();
-      setCurrentTime(generatedThoughts[0]?.createdAt || 0);
-      setIsPlaying(false);
-      setIsProcessing(false);
-      
-      toast({
-        title: "Thought process generated",
-        description: "You can now visualize the AI's thinking process."
-      });
-    }, 1500);
+    setIsProcessing(true);
+    setThoughts([]);
+    
+    // Reset the timeline
+    stopAnimation();
+    setIsPlaying(false);
+    
+    // Stream thoughts from the OpenAI API
+    streamThoughtsFromOpenAI(prompt, selectedModel.id, {
+      onThought: (thought) => {
+        setThoughts(prev => {
+          const updatedThoughts = [...prev, thought];
+          if (prev.length === 0) {
+            setCurrentTime(thought.createdAt);
+          }
+          return updatedThoughts;
+        });
+      },
+      onFinish: () => {
+        setIsProcessing(false);
+        toast({
+          title: "Thought process completed",
+          description: "You can now visualize the AI's thinking process."
+        });
+      },
+      onError: (error) => {
+        setIsProcessing(false);
+        toast({
+          title: "Error",
+          description: error,
+          variant: "destructive"
+        });
+      }
+    });
   };
   
   // Animation controls
@@ -156,6 +198,8 @@ const Index = () => {
               selectedModel={selectedModel} 
               onModelSelect={setSelectedModel}
               customModels={customModels}
+              onConnectApiClick={() => setShowApiDialog(true)}
+              hasApiKey={hasApiKey}
             />
             <ModelUploader onModelUploaded={handleModelUploaded} />
           </div>
@@ -212,6 +256,12 @@ const Index = () => {
       <footer className="py-4 px-6 text-center text-sm text-gray-500">
         <p>ThoughtStream Sync — Visualize AI thinking in real-time</p>
       </footer>
+      
+      {/* API Key Dialog */}
+      <ApiKeyDialog 
+        open={showApiDialog} 
+        onOpenChange={handleApiDialogChange} 
+      />
     </div>
   );
 };

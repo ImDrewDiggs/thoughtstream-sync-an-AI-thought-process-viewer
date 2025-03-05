@@ -2,23 +2,38 @@
 import React from 'react';
 import { ModelInfo, predefinedModels } from '@/utils/modelUtils';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 interface ModelSelectorProps {
   selectedModel: ModelInfo | null;
   onModelSelect: (model: ModelInfo) => void;
   customModels: ModelInfo[];
+  onConnectApiClick: () => void;
+  hasApiKey: boolean;
 }
 
 const ModelSelector: React.FC<ModelSelectorProps> = ({ 
   selectedModel, 
   onModelSelect,
-  customModels
+  customModels,
+  onConnectApiClick,
+  hasApiKey
 }) => {
   const allModels = [...predefinedModels, ...customModels];
 
   return (
     <div className="glass-panel p-6 flex flex-col space-y-4 w-full">
-      <h2 className="text-lg font-medium">Select AI Model</h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-lg font-medium">Select AI Model</h2>
+        <Button 
+          onClick={onConnectApiClick}
+          variant="outline"
+          size="sm"
+          className="text-xs"
+        >
+          {hasApiKey ? "Update API Key" : "Connect API"}
+        </Button>
+      </div>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {allModels.map((model) => (
@@ -42,6 +57,12 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
           </div>
         ))}
       </div>
+      
+      {!hasApiKey && (
+        <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+          <p>API connection required to visualize real AI thought processes.</p>
+        </div>
+      )}
     </div>
   );
 };
