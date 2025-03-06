@@ -1,18 +1,16 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import ModelSelector from '@/components/ModelSelector';
 import ModelUploader from '@/components/ModelUploader';
-import ThoughtVisualizer from '@/components/ThoughtVisualizer';
-import TimelineControl from '@/components/TimelineControl';
 import ApiKeyDialog from '@/components/ApiKeyDialog';
+import PromptInput from '@/components/PromptInput';
+import ApiErrorAlert from '@/components/ApiErrorAlert';
+import ThoughtVisualizationSection from '@/components/ThoughtVisualizationSection';
 import { ModelInfo, ThoughtNode } from '@/utils/modelUtils';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import { getApiKey, streamThoughtsFromOpenAI } from '@/services/aiService';
-import { AlertCircle } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import useThoughtAnimation from '@/hooks/useThoughtAnimation';
 
 const Index = () => {
   // State for model selection
@@ -21,8 +19,6 @@ const Index = () => {
   
   // State for thought visualization
   const [thoughts, setThoughts] = useState<ThoughtNode[]>([]);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   
@@ -31,7 +27,14 @@ const Index = () => {
   const [showApiDialog, setShowApiDialog] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   
-  const animationRef = useRef<number | null>(null);
+  // Use our custom animation hook
+  const {
+    currentTime,
+    isPlaying,
+    handlePlayPause,
+    handleReset,
+    handleTimeChange
+  } = useThoughtAnimation({ thoughts });
   
   // Check for API key on mount
   useEffect(() => {
@@ -87,18 +90,14 @@ const Index = () => {
     setThoughts([]);
     setApiError(null);
     
-    // Reset the timeline
-    stopAnimation();
-    setIsPlaying(false);
+    // Reset the animation
+    handleReset();
     
     // Stream thoughts from the OpenAI API
     streamThoughtsFromOpenAI(prompt, selectedModel.id, {
       onThought: (thought) => {
         setThoughts(prev => {
           const updatedThoughts = [...prev, thought];
-          if (prev.length === 0) {
-            setCurrentTime(thought.createdAt);
-          }
           return updatedThoughts;
         });
       },
@@ -121,76 +120,6 @@ const Index = () => {
     });
   };
   
-  // Animation controls
-  const startAnimation = () => {
-    if (!thoughts.length) return;
-    
-    const startTime = thoughts[0].createdAt;
-    const endTime = thoughts[thoughts.length - 1].createdAt;
-    
-    if (currentTime >= endTime) {
-      setCurrentTime(startTime);
-    }
-    
-    const step = (timestamp: number) => {
-      setCurrentTime(prev => {
-        const newTime = prev + 16; // ~60fps
-        
-        if (newTime >= endTime) {
-          setIsPlaying(false);
-          return endTime;
-        }
-        
-        return newTime;
-      });
-      
-      if (isPlaying) {
-        animationRef.current = requestAnimationFrame(step);
-      }
-    };
-    
-    animationRef.current = requestAnimationFrame(step);
-  };
-  
-  const stopAnimation = () => {
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
-      animationRef.current = null;
-    }
-  };
-  
-  // Handle play/pause toggle
-  const handlePlayPause = () => {
-    setIsPlaying(prev => !prev);
-  };
-  
-  // Handle reset
-  const handleReset = () => {
-    stopAnimation();
-    setCurrentTime(thoughts[0]?.createdAt || 0);
-    setIsPlaying(false);
-  };
-  
-  // Start or stop animation based on isPlaying state
-  useEffect(() => {
-    if (isPlaying) {
-      startAnimation();
-    } else {
-      stopAnimation();
-    }
-    
-    return () => {
-      stopAnimation();
-    };
-  }, [isPlaying]);
-  
-  // Clean up animation on unmount
-  useEffect(() => {
-    return () => {
-      stopAnimation();
-    };
-  }, []);
-  
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-gray-50 flex flex-col">
       <Header />
@@ -212,72 +141,29 @@ const Index = () => {
           {/* Center and right columns - Prompt input and visualization */}
           <div className="md:col-span-2 space-y-6">
             {/* Prompt input section */}
-            <div className="glass-panel p-6 animate-appear">
-              <h2 className="text-lg font-medium mb-4">Enter Prompt</h2>
-              <div className="space-y-4">
-                <Input
-                  placeholder="Enter your prompt here..."
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  className="w-full"
-                  disabled={isProcessing}
-                />
-                <Button
-                  onClick={handleGenerateThoughts}
-                  disabled={isProcessing || !selectedModel}
-                  className="w-full"
-                >
-                  {isProcessing ? "Processing..." : "Generate Thought Process"}
-                </Button>
-              </div>
-            </div>
+            <PromptInput 
+              prompt={prompt}
+              setPrompt={setPrompt}
+              onGenerate={handleGenerateThoughts}
+              isProcessing={isProcessing}
+              isDisabled={!selectedModel}
+            />
             
             {/* API Error Alert */}
-            {apiError && (
-              <Alert variant="destructive" className="animate-appear">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription className="space-y-2">
-                  <p>{apiError}</p>
-                  {apiError.includes("quota") && (
-                    <>
-                      <p className="font-semibold mt-2">How to fix:</p>
-                      <ol className="list-decimal pl-5 space-y-1">
-                        <li>Visit <a href="https://platform.openai.com/account/billing/overview" target="_blank" rel="noreferrer" className="underline">OpenAI Billing</a> to check your usage</li>
-                        <li>Upgrade to a paid plan or add more credits</li>
-                        <li>Try using a different API key</li>
-                      </ol>
-                      <Button variant="outline" size="sm" onClick={() => setShowApiDialog(true)} className="mt-2">
-                        Update API Key
-                      </Button>
-                    </>
-                  )}
-                </AlertDescription>
-              </Alert>
-            )}
+            <ApiErrorAlert 
+              error={apiError} 
+              onUpdateApiKey={() => setShowApiDialog(true)} 
+            />
             
             {/* Visualization section */}
-            {thoughts.length > 0 && (
-              <div className="glass-panel p-6 animate-appear">
-                <h2 className="text-lg font-medium mb-4">AI Thought Visualization</h2>
-                
-                <div className="h-[400px] mb-6 rounded-xl overflow-hidden border border-gray-100">
-                  <ThoughtVisualizer 
-                    thoughts={thoughts} 
-                    currentTime={currentTime} 
-                  />
-                </div>
-                
-                <TimelineControl 
-                  thoughts={thoughts}
-                  currentTime={currentTime}
-                  isPlaying={isPlaying}
-                  onTimeChange={setCurrentTime}
-                  onPlayPause={handlePlayPause}
-                  onReset={handleReset}
-                />
-              </div>
-            )}
+            <ThoughtVisualizationSection
+              thoughts={thoughts}
+              currentTime={currentTime}
+              isPlaying={isPlaying}
+              onTimeChange={handleTimeChange}
+              onPlayPause={handlePlayPause}
+              onReset={handleReset}
+            />
           </div>
         </div>
       </main>
