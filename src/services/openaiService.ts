@@ -41,7 +41,7 @@ export const streamThoughtsFromOpenAI = async (
         messages: [
           {
             role: 'system',
-            content: 'You are an AI assistant that thinks step by step and shows your reasoning process. Break down your thoughts clearly.'
+            content: 'Provide a detailed analysis with your reasoning. Share your thought process as you work through the question.'
           },
           {
             role: 'user',

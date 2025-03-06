@@ -35,7 +35,7 @@ const ApiKeyDialog: React.FC<ApiKeyDialogProps> = ({ open, onOpenChange }) => {
       
       toast({
         title: "API Key Saved",
-        description: "Your API key has been saved securely"
+        description: "Your API key has been saved locally"
       });
       
       onOpenChange(false);
@@ -54,9 +54,9 @@ const ApiKeyDialog: React.FC<ApiKeyDialogProps> = ({ open, onOpenChange }) => {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>OpenAI API Key</DialogTitle>
+          <DialogTitle>API Connection</DialogTitle>
           <DialogDescription>
-            Enter your OpenAI API key to connect with GPT models. Your key is stored locally and never sent to our servers.
+            Enter your API key to connect with language models. Your key is stored locally and never sent to our servers.
           </DialogDescription>
         </DialogHeader>
         
@@ -92,7 +92,7 @@ const ApiKeyDialog: React.FC<ApiKeyDialogProps> = ({ open, onOpenChange }) => {
               <div className="ml-3 text-blue-800">
                 <h3 className="font-medium">About API Usage</h3>
                 <div className="mt-1 text-xs">
-                  <p>ThoughtStream Sync uses your OpenAI API key to visualize thought processes. Usage counts toward your OpenAI account quota.</p>
+                  <p>This application uses your API key to analyze and visualize responses. Usage counts toward your account quota.</p>
                   <p className="mt-1">Free tier accounts have limited usage. Consider upgrading to a paid plan if you encounter quota errors.</p>
                   <a 
                     href="https://platform.openai.com/account/billing/overview" 

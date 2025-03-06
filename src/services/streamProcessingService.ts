@@ -3,7 +3,7 @@ import { toast } from "@/components/ui/use-toast";
 import { ThoughtNode } from "@/utils/modelUtils";
 import { StreamHandlers } from "./types/aiTypes";
 
-// Process the streamed response from OpenAI
+// Process the streamed response from the API
 export const processStreamedResponse = async (
   response: Response,
   handlers: StreamHandlers
@@ -24,7 +24,7 @@ export const processStreamedResponse = async (
   // Create an initial input node
   const initialNode: ThoughtNode = {
     id: `input-1`,
-    text: "Processing input request",
+    text: "Processing request...",
     type: 'input',
     connections: [`proc-${processingId}`],
     x: 50,
