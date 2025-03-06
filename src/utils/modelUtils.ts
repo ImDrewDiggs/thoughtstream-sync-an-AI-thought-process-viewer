@@ -6,6 +6,7 @@ export interface ModelInfo {
   name: string;
   description: string;
   type: string;
+  provider: string;
 }
 
 export interface ThoughtNode {
@@ -23,25 +24,43 @@ export const predefinedModels: ModelInfo[] = [
     id: 'gpt-4-mini',
     name: 'GPT-4 Mini',
     description: 'Smaller version of GPT-4 with faster inference',
-    type: 'language'
+    type: 'language',
+    provider: 'openai'
   },
   {
-    id: 'llama-3',
-    name: 'Llama 3',
-    description: 'Open source large language model by Meta',
-    type: 'language'
+    id: 'gpt-4',
+    name: 'GPT-4o',
+    description: 'Advanced model with reasoning capabilities',
+    type: 'language',
+    provider: 'openai'
   },
   {
-    id: 'claude-3',
-    name: 'Claude 3',
-    description: 'Advanced reasoning model by Anthropic',
-    type: 'language'
+    id: 'claude-3-sonnet',
+    name: 'Claude 3 Sonnet',
+    description: 'Anthropic\'s balanced model for various tasks',
+    type: 'language',
+    provider: 'claude'
+  },
+  {
+    id: 'claude-3-opus',
+    name: 'Claude 3 Opus',
+    description: 'Anthropic\'s most capable model for complex tasks',
+    type: 'language',
+    provider: 'claude'
+  },
+  {
+    id: 'claude-3-haiku',
+    name: 'Claude 3 Haiku',
+    description: 'Anthropic\'s fastest model for quick responses',
+    type: 'language',
+    provider: 'claude'
   },
   {
     id: 'gemini-pro',
     name: 'Gemini Pro',
     description: 'Multimodal model by Google',
-    type: 'multimodal'
+    type: 'multimodal',
+    provider: 'openai' // Fallback to OpenAI
   }
 ];
 

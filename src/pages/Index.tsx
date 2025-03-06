@@ -9,7 +9,8 @@ import ApiErrorAlert from '@/components/ApiErrorAlert';
 import ThoughtVisualizationSection from '@/components/ThoughtVisualizationSection';
 import { ModelInfo, ThoughtNode } from '@/utils/modelUtils';
 import { toast } from '@/components/ui/use-toast';
-import { getApiKey, streamThoughtsFromOpenAI } from '@/services/aiService';
+import { getApiKey, streamThoughtsFromAI } from '@/services/aiService';
+import { API_PROVIDERS } from '@/services/types/aiTypes';
 import useThoughtAnimation from '@/hooks/useThoughtAnimation';
 
 const Index = () => {
@@ -23,8 +24,9 @@ const Index = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   
   // State for API connection
-  const [hasApiKey, setHasApiKey] = useState(false);
+  const [hasApiKey, setHasApiKey] = useState<Record<string, boolean>>({});
   const [showApiDialog, setShowApiDialog] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState('openai');
   const [apiError, setApiError] = useState<string | null>(null);
   
   // Use our custom animation hook
@@ -36,18 +38,34 @@ const Index = () => {
     handleTimeChange
   } = useThoughtAnimation({ thoughts });
   
-  // Check for API key on mount
+  // Check for API keys on mount
   useEffect(() => {
-    const apiKey = getApiKey();
-    setHasApiKey(!!apiKey);
+    checkAllApiKeys();
   }, []);
+  
+  // Check all API keys
+  const checkAllApiKeys = () => {
+    const apiKeyStatus: Record<string, boolean> = {};
+    API_PROVIDERS.forEach(provider => {
+      apiKeyStatus[provider.id] = !!getApiKey(provider.id);
+    });
+    setHasApiKey(apiKeyStatus);
+  };
   
   // Update API key status when dialog closes
   const handleApiDialogChange = (open: boolean) => {
     setShowApiDialog(open);
     if (!open) {
-      setHasApiKey(!!getApiKey());
+      checkAllApiKeys();
     }
+  };
+
+  // Handle API key dialog open with selected provider
+  const handleConnectApiClick = (provider?: string) => {
+    if (provider) {
+      setSelectedProvider(provider);
+    }
+    setShowApiDialog(true);
   };
   
   // Handle model upload
@@ -80,8 +98,9 @@ const Index = () => {
       return;
     }
     
-    // Check if API key is available
-    if (!hasApiKey) {
+    // Check if API key is available for the selected model's provider
+    if (!hasApiKey[selectedModel.provider]) {
+      setSelectedProvider(selectedModel.provider);
       setShowApiDialog(true);
       return;
     }
@@ -93,9 +112,9 @@ const Index = () => {
     // Reset the animation
     handleReset();
     
-    // Stream thoughts from the OpenAI API
-    streamThoughtsFromOpenAI(prompt, selectedModel.id, {
-      onThought: (thought) => {
+    // Stream thoughts from the selected AI provider
+    streamThoughtsFromAI(prompt, selectedModel, {
+      onThought: (thought: ThoughtNode) => {
         setThoughts(prev => {
           const updatedThoughts = [...prev, thought];
           return updatedThoughts;
@@ -108,7 +127,7 @@ const Index = () => {
           description: "You can now visualize the AI's thinking process."
         });
       },
-      onError: (error) => {
+      onError: (error: string) => {
         setIsProcessing(false);
         setApiError(error);
         toast({
@@ -132,7 +151,7 @@ const Index = () => {
               selectedModel={selectedModel} 
               onModelSelect={setSelectedModel}
               customModels={customModels}
-              onConnectApiClick={() => setShowApiDialog(true)}
+              onConnectApiClick={handleConnectApiClick}
               hasApiKey={hasApiKey}
             />
             <ModelUploader onModelUploaded={handleModelUploaded} />
@@ -152,7 +171,12 @@ const Index = () => {
             {/* API Error Alert */}
             <ApiErrorAlert 
               error={apiError} 
-              onUpdateApiKey={() => setShowApiDialog(true)} 
+              onUpdateApiKey={() => {
+                if (selectedModel) {
+                  setSelectedProvider(selectedModel.provider);
+                }
+                setShowApiDialog(true)
+              }} 
             />
             
             {/* Visualization section */}
@@ -175,7 +199,8 @@ const Index = () => {
       {/* API Key Dialog */}
       <ApiKeyDialog 
         open={showApiDialog} 
-        onOpenChange={handleApiDialogChange} 
+        onOpenChange={handleApiDialogChange}
+        selectedProvider={selectedProvider}
       />
     </div>
   );
